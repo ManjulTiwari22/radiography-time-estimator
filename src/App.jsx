@@ -9,18 +9,42 @@ function App() {
   const [rtType, setRtType] = useState('S');
   const [spotLength, setSpotLength] = useState(300);
   const [numberOfSpots, setNumberOfSpots] = useState(10);
-  const [result, setResult] = useState({ minutes: 0, hours: 0, days: 0 });
+  const [result, setResult] = useState(0); // Result in minutes only
 
   const timeFactors = {
     I: { spot: 86.4, tFrame: 691.2, panoramic: 7200 },
     C: { spot: 23.8, tFrame: 113.0, panoramic: 1272.8 },
   };
 
+  const calculateValue = (seamType, innerRadius, thickness) => {
+    if (typeof innerRadius !== "number" || typeof thickness !== "number") {
+      throw new Error("Inner radius and thickness must be numbers.");
+    }
+
+    switch (seamType) {
+      case "CS":
+        return (innerRadius / 2) + thickness; // Outer radius for CS
+      case "LS":
+      case "TF":
+        return innerRadius; // Length for LS or TF
+      default:
+        throw new Error("Invalid seam type. Expected 'CS', 'LS', or 'TF'.");
+    }
+  };
+
   useEffect(() => {
     const newSpotLength = radioSource === 'I' ? 300 : 250;
     setSpotLength(newSpotLength);
-    setNumberOfSpots(Math.ceil(length / newSpotLength));
-  }, [radioSource, length]);
+
+    // Calculate number of spots based on seam type
+    if (seamType === 'CS') {
+      const outerRadius = calculateValue(seamType, length, thickness);
+      const circumference = 2 * Math.PI * outerRadius; // Circumference for CS
+      setNumberOfSpots(Math.ceil(circumference / newSpotLength));
+    } else {
+      setNumberOfSpots(Math.ceil(length / newSpotLength)); // For LS and TF
+    }
+  }, [radioSource, length, thickness, seamType]);
 
   useEffect(() => {
     if (seamType !== 'CS') {
@@ -35,11 +59,7 @@ function App() {
     const panoramicTime = rtType === 'P' ? factor.panoramic : 0;
     
     const totalMinutes = spotTime + tFrameTime + panoramicTime;
-    const totalHours = Math.floor(totalMinutes / 60);
-    const remainingMinutes = totalMinutes % 60;
-    const totalDays = Math.floor(totalHours / 24);
-    
-    setResult({ minutes: remainingMinutes, hours: totalHours % 24, days: totalDays });
+    setResult(totalMinutes); // Set result in minutes only
   };
 
   const getLengthLabel = () => {
@@ -115,11 +135,14 @@ function App() {
       {result !== null && (
         <div className="result-container">
           <h2>Estimated Time Required:</h2>
-          <p><strong>{result.days}</strong> day(s)</p>
-          <p><strong>{result.hours}</strong> hour(s)</p>
-          <p><strong>{result.minutes}</strong> minute(s)</p>
+          <p><strong>{result.toFixed(2)}</strong> minutes</p>
         </div>
       )}
+
+      <div>
+        <h2>Calculated Value:</h2>
+        <p>{calculateValue(seamType, length, thickness).toFixed(2)}</p>
+      </div>
     </div>
   );
 }
