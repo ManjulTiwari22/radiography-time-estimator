@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './index.css';
 
 function App() {
@@ -11,12 +11,12 @@ function App() {
   const [numberOfSpots, setNumberOfSpots] = useState(10);
   const [result, setResult] = useState(0); // Result in minutes only
 
-  const timeFactors = {
-    I: { spot: 86.4, tFrame: 691.2, panoramic: 7200 },
-    C: { spot: 23.8, tFrame: 113.0, panoramic: 1272.8 },
-  };
+  const timeFactors = useMemo(() => ({
+    I: { spot: 5.4 * Math.pow(2, thickness / 12.5), tFrame: 10.8 * Math.pow(2, thickness / 12.5), panoramic: 18 * Math.pow(2, thickness / 12.5) * length * length / 1000000 },
+    C: { spot: 4.2 * Math.pow(2, thickness / 20), tFrame: 8.4 * Math.pow(2, thickness / 20), panoramic: 9 * Math.pow(2, thickness / 20) * length * length / 1000000 },
+  }), [thickness, length]);
 
-  const calculateValue = (seamType, innerRadius, thickness) => {
+  const calculateValue = useCallback((seamType, innerRadius, thickness) => {
     if (typeof innerRadius !== "number" || typeof thickness !== "number") {
       throw new Error("Inner radius and thickness must be numbers.");
     }
@@ -25,12 +25,13 @@ function App() {
       case "CS":
         return (innerRadius / 2) + thickness; // Outer radius for CS
       case "LS":
+        return innerRadius; // For LS, return the length as is
       case "TF":
-        return innerRadius; // Length for LS or TF
+        return innerRadius; // For TF, return the length as is
       default:
         throw new Error("Invalid seam type. Expected 'CS', 'LS', or 'TF'.");
     }
-  };
+  }, []);
 
   useEffect(() => {
     const newSpotLength = radioSource === 'I' ? 300 : 250;
@@ -44,7 +45,7 @@ function App() {
     } else {
       setNumberOfSpots(Math.ceil(length / newSpotLength)); // For LS and TF
     }
-  }, [radioSource, length, thickness, seamType]);
+  }, [radioSource, length, thickness, seamType, calculateValue]);
 
   useEffect(() => {
     if (seamType !== 'CS') {
