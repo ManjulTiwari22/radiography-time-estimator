@@ -1,81 +1,145 @@
-.App {
-  text-align: center;
-  padding: 20px;
-  background: linear-gradient(90deg, #e6fbfde7, #e6fbfde7);
-  border-radius: 12px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
-  margin: 50px auto;
-  animation: fadeIn 1s ease-out;
-}
+/* index.css */
 
-/* Form container */
-.form-container {
+/* Global Styles */
+body {
+  font-family: "Montserrat", sans-serif;
+  background: linear-gradient(135deg, #e0e7ff, #f0f4ff);
+  color: #2c3e50;
+  margin: 0;
+  padding: 0;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 15px; /* Adds consistent spacing between form elements */
+  min-height: 100vh;
+  line-height: 1.6;
 }
 
+/* Calculator Container */
+.RadiographyCalculator {
+  text-align: center;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
+  animation: fadeIn 0.8s ease-out;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Heading */
+h2 {
+  font-weight: 700;
+  color: #1a237e;
+  margin-bottom: 24px;
+  text-align: center;
+  font-size: 34px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Labels */
 label {
   display: block;
-  margin: 10px 0 5px;
-  font-weight: 500;
-  color: #333;
-  font-size: 18px;
-  text-align: left; /* Align labels to the left */
-  width: 80%; /* Match the width of inputs */
-  max-width: 300px;
+  font-weight: 600;
+  color: #1a237e;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
 }
 
-input, select {
-  padding: 10px;
-  border: 2px solid #ccc;
+/* Inputs and Selects */
+select,
+input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #d1d1d1;
   border-radius: 8px;
-  font-size: 16px;
-  width: 80%; /* Consistent width for all inputs */
-  max-width: 300px; /* Limit maximum width */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  
+  font-size: 14px;
+  margin-bottom: 24px; /* Increased spacing */
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  background: #f8f9fa;
+  color: #2c3e50;
 }
 
-
-input:focus, select:focus {
-  border-color: #646cff;
-  box-shadow: 0 0 8px rgba(100, 108, 255, 0.3);
+select:focus,
+input[type="number"]:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 8px rgba(26, 115, 232, 0.3);
   outline: none;
+  background: #ffffff;
 }
 
-input:hover, select:hover {
-  border-color: #646cff;
+/* Placeholder Styling */
+input::placeholder {
+  color: #a0a0a0;
+  font-style: italic;
 }
 
+/* Button */
 button {
-  margin-top: 20px;
-  padding: 12px 24px;
+  width: 100%;
+  padding: 14px 24px;
   font-size: 16px;
-  font-weight: 500;
-  background-color: #646cff;
+  font-weight: 600;
+  background: linear-gradient(135deg, #1a73e8, #0d47a1);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s ease-in-out;
+  margin-top: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 button:hover {
-  background-color: #535bf2;
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, #0d47a1, #1a73e8);
+  transform: translateY(-3px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
 button:active {
   transform: translateY(0);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Animations */
-@keyframes fadeIn {
+/* Disabled Button */
+button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Result */
+h3 {
+  margin-top: 24px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #1a237e;
+  text-align: center;
+  white-space: pre-line;
+  background: rgba(26, 115, 232, 0.1);
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #1a73e8;
+  animation: slideIn 0.5s ease-out;
+}
+
+/* Error Message */
+.error-message {
+  color: #d32f2f;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Slide-in Animation for Result */
+@keyframes slideIn {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -86,44 +150,34 @@ button:active {
   }
 }
 
+/* Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .fade-in {
-  animation: fadeIn 1s ease-out;
+  animation: fadeIn 0.8s ease-out;
 }
 
 /* Responsive Design */
-@media (max-width: 800px) {
-  .App {
-    padding: 15px;
+@media (max-width: 480px) {
+  .RadiographyCalculator {
+    padding: 24px;
   }
-  input, select {
-    width: 90%;
+
+  h2 {
+    font-size: 24px;
   }
-  label {
-    width: 90%;
+
+  button {
+    padding: 12px 20px;
+    font-size: 14px;
   }
-}
-
-/* Styles for the result section */
-.result-container {
-  margin-top: 30px;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.result-container h2 {
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.result-container p {
-  font-size: 18px;
-  color: #555;
-  margin: 10px 0;
-}
-
-.result-container p strong {
-  color: #007bff;
 }
