@@ -1,151 +1,113 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState } from "react";
 import './index.css';
 
-function App() {
-  const [seamType, setSeamType] = useState('LS');
-  const [length, setLength] = useState(3000);
-  const [thickness, setThickness] = useState(50);
-  const [radioSource, setRadioSource] = useState('I');
-  const [rtType, setRtType] = useState('S');
-  const [spotLength, setSpotLength] = useState(300);
-  const [numberOfSpots, setNumberOfSpots] = useState(10);
-  const [result, setResult] = useState(0); // Result in minutes only
 
-  const timeFactors = useMemo(() => ({
-    I: { spot: 5.4 * Math.pow(2, thickness / 12.5), tFrame: 10.8 * Math.pow(2, thickness / 12.5), panoramic: 18 * Math.pow(2, thickness / 12.5) * length * length / 1000000 },
-    C: { spot: 4.2 * Math.pow(2, thickness / 20), tFrame: 8.4 * Math.pow(2, thickness / 20), panoramic: 9 * Math.pow(2, thickness / 20) * length * length / 1000000 },
-  }), [thickness, length]);
 
-  const calculateValue = useCallback((seamType, innerRadius, thickness) => {
-    if (typeof innerRadius !== "number" || typeof thickness !== "number") {
-      throw new Error("Inner radius and thickness must be numbers.");
-    }
+const RadiographyCalculator = () => {
+    const [seamType, setSeamType] = useState("LS");
+    const [length, setLength] = useState();
+    const [thickness, setThickness] = useState();
+    const [source, setSource] = useState("Cobalt");
+    const [mode, setMode] = useState("Spot");
+    const [result, setResult] = useState(null);
 
-    switch (seamType) {
-      case "CS":
-        return (innerRadius / 2) + thickness; // Outer radius for CS
-      case "LS":
-        return innerRadius; // For LS, return the length as is
-      case "TF":
-        return innerRadius; // For TF, return the length as is
-      default:
-        throw new Error("Invalid seam type. Expected 'CS', 'LS', or 'TF'.");
-    }
-  }, []);
+    const calculateRadiographyTime = () => {
+        let spotLength = source === "Cobalt" ? 250 : 300;
+        let seamLength;
+        
+        if (seamType === "LS" || seamType === "TF") {
+            seamLength = length;
+        } else if (seamType === "CS") {
+            let outerRadius = (length / 2) + thickness;
+            seamLength = outerRadius;
+        } else {
+            setResult("Invalid Seam Type");
+            return;
+        }
 
-  useEffect(() => {
-    const newSpotLength = radioSource === 'I' ? 300 : 250;
-    setSpotLength(newSpotLength);
+        let numSpots;
+        if (seamType === "CS") {
+            numSpots = mode === "Panoramic" ? 1 : Math.ceil((Math.PI * (length / 2 + thickness) * 2) / spotLength);
+        } else {
+            numSpots = Math.ceil(seamLength / spotLength);
+        }
 
-    // Calculate number of spots based on seam type
-    if (seamType === 'CS') {
-      const outerRadius = calculateValue(seamType, length, thickness);
-      const circumference = 2 * Math.PI * outerRadius; // Circumference for CS
-      setNumberOfSpots(Math.ceil(circumference / newSpotLength));
-    } else {
-      setNumberOfSpots(Math.ceil(length / newSpotLength)); // For LS and TF
-    }
-  }, [radioSource, length, thickness, seamType, calculateValue]);
+        let time = 0;
 
-  useEffect(() => {
-    if (seamType !== 'CS') {
-      setRtType('S');
-    }
-  }, [seamType]);
+        if (seamType === "CS") {
+            if (mode === "Panoramic") {
+                time = source === "Cobalt" 
+                    ? 9 * Math.pow(2, thickness / 20) * (seamLength * seamLength) / 1000000
+                    : 18 * Math.pow(2, thickness / 12.5) * (seamLength * seamLength) / 1000000;
+            } else if (mode === "Spot") {
+                time = source === "Cobalt" 
+                    ? 4.2 * Math.pow(2, thickness / 20) * numSpots
+                    : 5.4 * Math.pow(2, thickness / 12.5) * numSpots;
+            }
+        } else if (seamType === "LS") {
+            if (mode === "Spot") {
+                time = source === "Cobalt" 
+                    ? 4.2 * Math.pow(2, thickness / 20) * numSpots
+                    : 5.4 * Math.pow(2, thickness / 12.5) * numSpots;
+            } else {
+                setResult("Not Possible (NULL)");
+                return;
+            }
+        } else if (seamType === "TF") {
+            if (mode === "Spot") {
+                time = source === "Cobalt" 
+                    ? 8.4 * Math.pow(2, (1.5 * thickness) / 20) * numSpots
+                    : 10.8 * Math.pow(2, (1.5 * thickness) / 12.5) * numSpots;
+            } else {
+                setResult("Not Possible (NULL)");
+                return;
+            }
+        }
 
-  const calculateTime = () => {
-    const factor = timeFactors[radioSource];
-    const spotTime = numberOfSpots * factor.spot;
-    const tFrameTime = seamType === 'TF' ? factor.tFrame : 0;
-    const panoramicTime = rtType === 'P' ? factor.panoramic : 0;
-    
-    const totalMinutes = spotTime + tFrameTime + panoramicTime;
-    setResult(totalMinutes); // Set result in minutes only
-  };
+        let totalMinutes = Math.round(time);
+        let totalHours = Math.round(totalMinutes / 60);
+        let totalDays = Math.round(totalHours / 24);
+        
+        setResult(`Time Required:
+In Mins: ${totalMinutes}
+In Hours: ${totalHours}
+In Days: ${totalDays}`);
+    };
 
-  const getLengthLabel = () => {
-    if (seamType === 'CS') return 'Inner Diameter (mm):';
-    if (seamType === 'TF') return 'Long Seam (mm):';
-    return 'Length of Shell/Nozzle (mm):';
-  };
-
-  return (
-    <div className="App">
-      <h1>Radiography Test Time Estimation</h1>
-      <div>
-        <label>
-          C/SEAM OR L/SEAM OR T-FRAME (LS/CS/TF):
-          <select value={seamType} onChange={(e) => setSeamType(e.target.value)}>
-            <option value="LS">LS</option>
-            <option value="CS">CS</option>
-            <option value="TF">TF</option>
-          </select>
-        </label>
-      </div>
-      <div>
-        <label>
-          {getLengthLabel()}
-          <input
-            type="number"
-            value={length}
-            onChange={(e) => setLength(parseInt(e.target.value))}
-          />
-        </label>
-      </div>
-      <div>
-        <label>
-          Lower Thickness including Reinforcement (mm):
-          <input
-            type="number"
-            value={thickness}
-            onChange={(e) => setThickness(parseInt(e.target.value))}
-          />
-        </label>
-      </div>
-      <div>
-        <label>
-          Radiography by Iridium/Cobalt (I/C):
-          <select value={radioSource} onChange={(e) => setRadioSource(e.target.value)}>
-            <option value="I">Iridium</option>
-            <option value="C">Cobalt</option>
-          </select>
-        </label>
-      </div>
-      <div>
-        <label>
-          Spot RT or Panoramic RT (S/P):
-          <select value={rtType} onChange={(e) => setRtType(e.target.value)} disabled={seamType !== 'CS'}>
-            <option value="S">Spot RT</option>
-            {seamType === 'CS' && <option value="P">Panoramic RT</option>}
-          </select>
-        </label>
-      </div>
-      <div>
-        <label>
-          Spot Length (mm):
-          <input type="number" value={spotLength} readOnly />
-        </label>
-      </div>
-      <div>
-        <label>
-          Number of Spots:
-          <input type="number" value={numberOfSpots} readOnly />
-        </label>
-      </div>
-      <button onClick={calculateTime}>Calculate Time</button>
-      {result !== null && (
-        <div className="result-container">
-          <h2>Estimated Time Required:</h2>
-          <p><strong>{result.toFixed(2)}</strong> minutes</p>
+    return (
+        <div>
+            <h2>Radiography Time Calculator</h2>
+            <label>Seam Type: 
+                <select value={seamType} onChange={(e) => setSeamType(e.target.value)}>
+                    <option value="LS">Long Seam</option>
+                    <option value="CS">Circumferential Seam</option>
+                    <option value="TF">T Frame</option>
+                </select>
+            </label>
+            <br/>
+            <label>Length/Inside Diameter: <input type="number" value={length} onChange={(e) => setLength(Number(e.target.value))} /></label>
+            <br/>
+            <label>Thickness: <input type="number" value={thickness} onChange={(e) => setThickness(Number(e.target.value))} /></label>
+            <br/>
+            <label>Source: 
+                <select value={source} onChange={(e) => setSource(e.target.value)}>
+                    <option value="Cobalt">Cobalt-60</option>
+                    <option value="Iridium">Iridium-192</option>
+                </select>
+            </label>
+            <br/>
+            <label>Mode: 
+                <select value={mode} onChange={(e) => setMode(e.target.value)}>
+                    <option value="Spot">Spot</option>
+                    <option value="Panoramic">Panoramic</option>
+                </select>
+            </label>
+            <br/>
+            <button onClick={calculateRadiographyTime}>Calculate</button>
+            <br/>
+            {result !== null && <h3>Time Required: {result}</h3>}
         </div>
-      )}
+    );
+};
 
-      <div>
-        <h2>Calculated Value:</h2>
-        <p>{calculateValue(seamType, length, thickness).toFixed(2)}</p>
-      </div>
-    </div>
-  );
-}
-
-export default App;
+export default RadiographyCalculator;
